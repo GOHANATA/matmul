@@ -9,7 +9,19 @@
 #include <sys/timeb.h>
 #include <string.h>
 #import <cuda_runtime.h>
+#include <cuda_profiler_api.h>
 
+#define BLOCK_SIZE 16
+
+__global__ void global_kernel(int N, REAL *A, REAL *B, REAL *C)
+{
+    float cValue = 0.0;
+    int row = blcokIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+
+    for (int e = 0; e < N; ++e) cValue += A[row * N + e] * B{[e * N + col];
+    C[row * N + col] = cValue;
+}
 
 /* read timer in second */
 double read_timer() {
@@ -97,7 +109,9 @@ int main(int argc, char *argv[]) {
      */
     cudaSetDevice(0); 
     //call and time for matmul_cuda_v1_vanilla(int N, REAL *A, REAL *B, REAL *C);
-
+    elapsed_cuda_v1 = read_timer();
+    matmul_cuda_v1_vanilla(N, A, B, C_base);
+    elapsed_cuda_v1 = (read_timer() - elapsed_cuda_v1);
     //call and time for matmul_cuda_v1_shmem(int N, REAL *A, REAL *B, REAL *C);
 
     //call and time for matmul_cuda_v1_cublas(int N, REAL *A, REAL *B, REAL *C);
@@ -109,6 +123,7 @@ int main(int argc, char *argv[]) {
     printf("------------------------------------------------------------------------------------------------------\n");
     printf("matmul_base:\t\t%4f\t%4f \t\t%g\n", elapsed_base * 1.0e3, ((((2.0 * N) * N) * N) / (1.0e6 * elapsed_base)), maxerror(N, N, C_base, C_base));
     printf("matmul_openmp:\t\t%4f\t%4f \t\t%g\n", elapsed_openmp * 1.0e3, ((((2.0 * N) * N) * N) / (1.0e6 * elapsed_openmp)), maxerror(N, N, C_base, C_openmp));
+    printf("matmul_cuda_v1:\t\t%4f\t%4f \t\t%g\n", elapsed_cuda_v1 * 1.0e3, ((((2.0 * N) * N) * N) / (1.0e6 * elapsed_cuda_v1)), maxerror(N, N, C_base, C_openmp));
     /* put other printf statements for outputing results for GPU execution */
     free(heap_buffer);
     return 0;
@@ -146,7 +161,7 @@ void matmul_openmp(int N, REAL *A, REAL *B, REAL *C, int num_tasks) {
 /*
  * call to kernel that uses GPU global memory
  */
-void matmul_cuda_v1_vanilla(int N, REAL *A, REAL *B, REAL *C, ) {
+void matmul_cuda_v1_vanilla(int N, REAL *A, REAL *B, REAL *C) {
     size_t size = N * N *sizeof(REAL);
 
     float* d_A;
@@ -159,10 +174,10 @@ void matmul_cuda_v1_vanilla(int N, REAL *A, REAL *B, REAL *C, ) {
     cudaMemcpy(d_A, A, size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_B, B, size, cudaMemcpyHostToDevice);
 
-    int threadsPerBlock = 256;
-    int blocksPerGrid = (N + threadsPerBlock - 1) / threadsPerBlock;
+    dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
+    dim3 dimGrid(N / dimBlock.x, N / dimBock.y);
 
-    matmul_kernel<<<blocksPerGrid, threadsPerBlock>>>(N, d_A, d_B, d_C);
+    global_kernel<<<dimGrid, dimBlock>>>(N, d_A, d_B, d_C);
 
     cudaMemcpy(C, d_C, size, cudaMemcpyDeviceToHost);
 
@@ -174,13 +189,13 @@ void matmul_cuda_v1_vanilla(int N, REAL *A, REAL *B, REAL *C, ) {
 /*
  * call to kernel that use GPU shared memory
  */
-void matmul_cuda_v2_shmem(int N, REAL *A, REAL *B, REAL *C) {
+// void matmul_cuda_v2_shmem(int N, REAL *A, REAL *B, REAL *C) {
 
-}
+// }
 
-/*
- * call to sgemm of cublas library 
- */
-void matmul_cuda_v3_cublas(int N, REAL *A, REAL *B, REAL *C) {
+// /*
+//  * call to sgemm of cublas library 
+//  */
+// void matmul_cuda_v3_cublas(int N, REAL *A, REAL *B, REAL *C) {
 
-}
+// }
