@@ -174,7 +174,7 @@ void matmul_cuda_v1_vanilla(int N, REAL *A, REAL *B, REAL *C) {
     cudaMemcpy(d_B, B, size, cudaMemcpyHostToDevice);
 
     dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
-    dim3 dimGrid(N / dimBlock.x, N / dimBock.y);
+    dim3 dimGrid(N / dimBlock.x, N / dimBlock.y);
 
     global_kernel<<<dimGrid, dimBlock>>>(N, d_A, d_B, d_C);
 
