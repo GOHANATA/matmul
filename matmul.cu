@@ -10,6 +10,7 @@
 #include <string.h>
 #import <cuda_runtime.h>
 #include <cuda_profiler_api.h>
+#include <omp.h>
 
 #define BLOCK_SIZE 16
 
