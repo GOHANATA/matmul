@@ -13,16 +13,6 @@
 
 #define BLOCK_SIZE 16
 
-__global__ void global_kernel(int N, REAL *A, REAL *B, REAL *C)
-{
-    float cValue = 0.0;
-    int row = blcokIdx.y * blockDim.y + threadIdx.y;
-    int col = blockIdx.x * blockDim.x + threadIdx.x;
-
-    for (int e = 0; e < N; ++e) cValue += A[row * N + e] * B{[e * N + col];
-    C[row * N + col] = cValue;
-}
-
 /* read timer in second */
 double read_timer() {
     struct timeb tm;
@@ -156,7 +146,15 @@ void matmul_openmp(int N, REAL *A, REAL *B, REAL *C, int num_tasks) {
     }
 }
 
+__global__ void global_kernel(int N, REAL *A, REAL *B, REAL *C)
+{
+    float cValue = 0.0;
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
 
+    for (int e = 0; e < N; ++e) cValue += A[row * N + e] * B[e * N + col];
+    C[row * N + col] = cValue;
+}
 
 /*
  * call to kernel that uses GPU global memory
