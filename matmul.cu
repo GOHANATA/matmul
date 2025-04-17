@@ -11,6 +11,7 @@
 #import <cuda_runtime.h>
 #include <cuda_profiler_api.h>
 #include <omp.h>
+#include <cublas_v2.h>
 
 typedef struct {
     int width;
@@ -111,11 +112,13 @@ int main(int argc, char *argv[]) {
     // matmul_cuda_v1_vanilla(N, A, B, C_base);
     // elapsed_cuda_v1 = (read_timer() - elapsed_cuda_v1);
     //call and time for matmul_cuda_v1_shmem(int N, REAL *A, REAL *B, REAL *C);
-    elapsed_cuda_v2 = read_timer();
-    matmul_cuda_v2_shmem(N, A, B, C_base);
-    elapsed_cuda_v2 = (read_timer() - elapsed_cuda_v2);
+    // elapsed_cuda_v2 = read_timer();
+    // matmul_cuda_v2_shmem(N, A, B, C_base);
+    // elapsed_cuda_v2 = (read_timer() - elapsed_cuda_v2);
     //call and time for matmul_cuda_v1_cublas(int N, REAL *A, REAL *B, REAL *C);
-
+    elapsed_cuda_v3 = read_timer();
+    matmul_cuda_v3_cublas(N, A, B, C_base);
+    elapsed_cuda_v3 = (read_timer() - elapsed_cuda_v3);
     printf("======================================================================================================\n");
     printf("Matrix Multiplication: A[M][K] * B[k][N] = C[M][N], M=K=N=%d, %d threads/tasks\n", N, num_tasks);
     printf("------------------------------------------------------------------------------------------------------\n");
@@ -124,8 +127,8 @@ int main(int argc, char *argv[]) {
     printf("matmul_base:\t\t%4f\t%4f \t\t%g\n", elapsed_base * 1.0e3, ((((2.0 * N) * N) * N) / (1.0e6 * elapsed_base)), maxerror(N, N, C_base, C_base));
     printf("matmul_openmp:\t\t%4f\t%4f \t\t%g\n", elapsed_openmp * 1.0e3, ((((2.0 * N) * N) * N) / (1.0e6 * elapsed_openmp)), maxerror(N, N, C_base, C_openmp));
     //printf("matmul_cuda_v1:\t\t%4f\t%4f \t\t%g\n", elapsed_cuda_v1 * 1.0e3, ((((2.0 * N) * N) * N) / (1.0e6 * elapsed_cuda_v1)), maxerror(N, N, C_base, C_openmp));
-    printf("matmul_cuda_v2:\t\t%4f\t%4f \t\t%g\n", elapsed_cuda_v2 * 1.0e3, ((((2.0 * N) * N) * N) / (1.0e6 * elapsed_cuda_v2)), maxerror(N, N, C_base, C_openmp));
-
+    // printf("matmul_cuda_v2:\t\t%4f\t%4f \t\t%g\n", elapsed_cuda_v2 * 1.0e3, ((((2.0 * N) * N) * N) / (1.0e6 * elapsed_cuda_v2)), maxerror(N, N, C_base, C_openmp));
+    printf("matmul_cuda_v3:\t\t%4f\t%4f \t\t%g\n", elapsed_cuda_v3 * 1.0e3, ((((2.0 * N) * N) * N) / (1.0e6 * elapsed_cuda_v3)), maxerror(N, N, C_base, C_openmp));
     /* put other printf statements for outputing results for GPU execution */
     free(heap_buffer);
     return 0;
@@ -292,5 +295,25 @@ void matmul_cuda_v2_shmem(int N, REAL *A, REAL *B, REAL *C)
  * call to sgemm of cublas library 
  */
 void matmul_cuda_v3_cublas(int N, REAL *A, REAL *B, REAL *C) {
+    size_t size = N * N *sizeof(REAL);
 
+    float* d_A;
+    cudaMalloc(&d_A, size);
+    float* d_B;
+    cudaMalloc(&d_B, size);
+    float* d_C;
+    cudaMalloc(&d_C, size);
+
+    cudaMemcpy(d_A, A, size, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_B, B, size, cudaMemcpyHostToDevice);
+
+    cublasHandle_t handle;
+    cublasCreate(&handle);
+
+    float alpha = 1.0f;
+    float beta = 0.0f;
+
+    cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha, d_A, N, d_B, N, &beta, d_C, N);
+    
+    cudaMemcpy(C, d_C, size, cudaMemcpyDeviceToHost);
 }
