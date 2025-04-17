@@ -137,7 +137,7 @@ __device__ void SetElement(Matrix A, int row, int col, float value)
     A.elements[row * A.stride + col] = value;
 }
 
-__device__ Matrix GetSubMAtrix(REAL* A, int row, int col)
+__device__ Matrix GetSubMatrix(REAL* A, int row, int col, int N)
 {
     Matrix subMatrix;
     subMatrix.width = BLOCK_SIZE;
@@ -184,10 +184,10 @@ __global__ void global_kernel(int N, REAL *A, REAL *B, REAL *C)
     C[row * N + col] = cValue;
 }
 
-__global__ void shared_kernel(int N, REAL *A, REAL *B, REAL *C)
+__global__ void shared_kernel(int N, Matrix A, Matrix B, Matrix C)
 {
     int blockRow = blockIdx.y;
-    int blcokCol = blockIdx.x;
+    int blockCol = blockIdx.x;
 
     Matrix Csub = GetSubMatrix(C, blockRow, blcokCol);
 
@@ -196,7 +196,7 @@ __global__ void shared_kernel(int N, REAL *A, REAL *B, REAL *C)
     int row = threadIdx.y;
     int col = threadIdx.x;
 
-    for (int m = 0; m < (A.width / BLOCK_SIZE); ++m) {
+    for (int m = 0; m < (N/ BLOCK_SIZE); ++m) {
 
         Matrix Asub = GetSubMatrix(A, blockRow, m);
 
@@ -210,7 +210,7 @@ __global__ void shared_kernel(int N, REAL *A, REAL *B, REAL *C)
         
         __syncthreads();
 
-        for (int e = 0; e < BLOCK_SIZE; ++e) Cvalue += As[row][e] * Bs[e][col];
+        for (int e = 0; e < BLOCK_SIZE; ++e) cValue += As[row][e] * Bs[e][col];
         __syncthreads();
     }
 
@@ -274,7 +274,7 @@ void matmul_cuda_v2_shmem(int N, REAL *A, REAL *B, REAL *C)
 
     dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
     dim3 dimGrid(N / dimBlock.x, N / dimBlock.y);
-    shared_kernel<<<dimGrid, dimBlock>>>(d_A, d_B, d_C);
+    shared_kernel<<<dimGrid, dimBlock>>>(N, d_A, d_B, d_C);
 
     cudaMemcpy(C, d_C.elements, size, cudaMemcpyDeviceToHost);
 
