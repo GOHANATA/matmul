@@ -12,6 +12,33 @@
 #include <cuda_profiler_api.h>
 #include <omp.h>
 
+typedef struct {
+    int width;
+    int height;
+    int stride;
+    float* elements;
+} Matrix;
+
+__device__ float GetElement(const Matrix A, int row, int col)
+{
+    return A.elements[row * A.stride + col];
+}
+
+__device__ void SetElement(Matrix A, int row, int col, float value)
+{
+    A.elements[row * A.stride + col] = value;
+}
+
+__device__ Matrix GetSubMAtrix(REAL* A, int row, int col)
+{
+    Matrix subMatrix;
+    subMatrix.width = BLOCK_SIZE;
+    subMatrix.height = BLOCK_SIZE;
+    subMatrix.stride = N;
+    subMatrix.elements = A[N * BLOCK_SIZE * row + BLOCK_SIZE * col];
+    return subMatrix;
+}
+
 #define BLOCK_SIZE 16
 
 /* read timer in second */
@@ -157,6 +184,39 @@ __global__ void global_kernel(int N, REAL *A, REAL *B, REAL *C)
     C[row * N + col] = cValue;
 }
 
+__global__ void shared_kernel(int N, REAL *A, REAL *B, REAL *C)
+{
+    int blockRow = blockIdx.y;
+    int blcokCol = blockIdx.x;
+
+    Matrix Csub = GetSubMatrix(C, blockRow, blcokCol);
+
+    float cValue = 0.0;
+
+    int row = threadIdx.y;
+    int col = threadIdx.x;
+
+    for (int m = 0; m < (A.width / BLOCK_SIZE); ++m) {
+
+        Matrix Asub = GetSubMatrix(A, blockRow, m);
+
+        Matrix Bsub = GetSubMatrix(B, m, blockCol);
+
+        __shared__ float As[BLOCK_SIZE][BLOCK_SIZE];
+        __shared__ float Bs[BLOCK_SIZE][BLOCK_SIZE];
+        
+        As[row][col] = GetElement(Asub, row, col);
+        Bs[row][col] = GetElement(Bsub, row, col);
+        
+        __syncthreads();
+
+        for (int e = 0; e < BLOCK_SIZE; ++e) Cvalue += As[row][e] * Bs[e][col];
+        __syncthreads();
+    }
+
+    SetElement(Csub, row, col, Cvalue);
+}
+
 /*
  * call to kernel that uses GPU global memory
  */
@@ -188,13 +248,44 @@ void matmul_cuda_v1_vanilla(int N, REAL *A, REAL *B, REAL *C) {
 /*
  * call to kernel that use GPU shared memory
  */
-// void matmul_cuda_v2_shmem(int N, REAL *A, REAL *B, REAL *C) {
+void matmul_cuda_v2_shmem(int N, REAL *A, REAL *B, REAL *C) 
+{
+    Matrix d_A;
+    d_A.width = N;
+    d_A.stride = N; 
+    d_A.height = N;
+    size_t size = N * N * sizeof(float);
+    cudaMalloc(&d_A.elements, size);
+    cudaMemcpy(d_A.elements, A, size, cudaMemcpyHostToDevice);
+    Matrix d_B;
+    d_B.width = N;
+    d_B.stride = N; 
+    d_B.height = N;
+    size = N * N * sizeof(float);
+    cudaMalloc(&d_B.elements, size);
+    cudaMemcpy(d_B.elements, B, size, cudaMemcpyHostToDevice);
 
-// }
+    Matrix d_C;
+    d_C.width = N;
+    d_C.stride = N;
+    d_C.height = N;
+    size = N * N * sizeof(float);
+    cudaMalloc(&d_C.elements, size);
 
-// /*
-//  * call to sgemm of cublas library 
-//  */
-// void matmul_cuda_v3_cublas(int N, REAL *A, REAL *B, REAL *C) {
+    dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
+    dim3 dimGrid(N / dimBlock.x, N / dimBlock.y);
+    shared_kernel<<<dimGrid, dimBlock>>>(d_A, d_B, d_C);
 
-// }
+    cudaMemcpy(C, d_C.elements, size, cudaMemcpyDeviceToHost);
+
+    cudaFree(d_A.elements);
+    cudaFree(d_B.elements);
+    cudaFree(d_C.elements);
+}
+
+/*
+ * call to sgemm of cublas library 
+ */
+void matmul_cuda_v3_cublas(int N, REAL *A, REAL *B, REAL *C) {
+
+}
