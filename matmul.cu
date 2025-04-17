@@ -213,7 +213,7 @@ __global__ void shared_kernel(int N, Matrix A, Matrix B, Matrix C)
         Bs[row][col] = GetElement(Bsub, row, col);
         
         __syncthreads();
-        printf("matmul_cuda_v1:\t\t%4f\t%4f \t\t%g\n", elapsed_cuda_v1 * 1.0e3, ((((2.0 * N) * N) * N) / (1.0e6 * elapsed_cuda_v1)), maxerror(N, N, C_base, C_openmp));
+        
 
         for (int e = 0; e < BLOCK_SIZE; ++e) cValue += As[row][e] * Bs[e][col];
         __syncthreads();
