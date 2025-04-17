@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
     elapsed_cuda_v1 = (read_timer() - elapsed_cuda_v1);
     //call and time for matmul_cuda_v1_shmem(int N, REAL *A, REAL *B, REAL *C);
     elapsed_cuda_v2 = read_timer();
-    matmul_cuda_v1_shmem(N, A, B, C_openmp);
+    matmul_cuda_v2_shmem(N, A, B, C_openmp);
     elapsed_cuda_v2 = (read_timer() - elapsed_cuda_v2);
     //call and time for matmul_cuda_v1_cublas(int N, REAL *A, REAL *B, REAL *C);
 
