@@ -143,7 +143,7 @@ __device__ Matrix GetSubMatrix(Matrix A, int row, int col, int N)
     subMatrix.width = BLOCK_SIZE;
     subMatrix.height = BLOCK_SIZE;
     subMatrix.stride = N;
-    subMatrix.elements = A.elements[N * BLOCK_SIZE * row + BLOCK_SIZE * col];
+    subMatrix.elements = &A.elements[N * BLOCK_SIZE * row + BLOCK_SIZE * col];
     return subMatrix;
 }
 
