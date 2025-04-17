@@ -19,26 +19,6 @@ typedef struct {
     float* elements;
 } Matrix;
 
-__device__ float GetElement(const Matrix A, int row, int col)
-{
-    return A.elements[row * A.stride + col];
-}
-
-__device__ void SetElement(Matrix A, int row, int col, float value)
-{
-    A.elements[row * A.stride + col] = value;
-}
-
-__device__ Matrix GetSubMAtrix(REAL* A, int row, int col)
-{
-    Matrix subMatrix;
-    subMatrix.width = BLOCK_SIZE;
-    subMatrix.height = BLOCK_SIZE;
-    subMatrix.stride = N;
-    subMatrix.elements = A[N * BLOCK_SIZE * row + BLOCK_SIZE * col];
-    return subMatrix;
-}
-
 #define BLOCK_SIZE 16
 
 /* read timer in second */
@@ -145,6 +125,26 @@ int main(int argc, char *argv[]) {
     /* put other printf statements for outputing results for GPU execution */
     free(heap_buffer);
     return 0;
+}
+
+__device__ float GetElement(const Matrix A, int row, int col)
+{
+    return A.elements[row * A.stride + col];
+}
+
+__device__ void SetElement(Matrix A, int row, int col, float value)
+{
+    A.elements[row * A.stride + col] = value;
+}
+
+__device__ Matrix GetSubMAtrix(REAL* A, int row, int col)
+{
+    Matrix subMatrix;
+    subMatrix.width = BLOCK_SIZE;
+    subMatrix.height = BLOCK_SIZE;
+    subMatrix.stride = N;
+    subMatrix.elements = A[N * BLOCK_SIZE * row + BLOCK_SIZE * col];
+    return subMatrix;
 }
 
 void matmul_base(int N, REAL *A, REAL * B, REAL *C) {
