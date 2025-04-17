@@ -137,13 +137,13 @@ __device__ void SetElement(Matrix A, int row, int col, float value)
     A.elements[row * A.stride + col] = value;
 }
 
-__device__ Matrix GetSubMatrix(REAL* A, int row, int col, int N)
+__device__ Matrix GetSubMatrix(Matrix A, int row, int col, int N)
 {
     Matrix subMatrix;
     subMatrix.width = BLOCK_SIZE;
     subMatrix.height = BLOCK_SIZE;
     subMatrix.stride = N;
-    subMatrix.elements = A[N * BLOCK_SIZE * row + BLOCK_SIZE * col];
+    subMatrix.elements = A.elements[N * BLOCK_SIZE * row + BLOCK_SIZE * col];
     return subMatrix;
 }
 
@@ -189,7 +189,7 @@ __global__ void shared_kernel(int N, Matrix A, Matrix B, Matrix C)
     int blockRow = blockIdx.y;
     int blockCol = blockIdx.x;
 
-    Matrix Csub = GetSubMatrix(C, blockRow, blcokCol);
+    Matrix Csub = GetSubMatrix(C, blockRow, blockCol, N);
 
     float cValue = 0.0;
 
@@ -198,9 +198,9 @@ __global__ void shared_kernel(int N, Matrix A, Matrix B, Matrix C)
 
     for (int m = 0; m < (N/ BLOCK_SIZE); ++m) {
 
-        Matrix Asub = GetSubMatrix(A, blockRow, m);
+        Matrix Asub = GetSubMatrix(A, blockRow, m, N);
 
-        Matrix Bsub = GetSubMatrix(B, m, blockCol);
+        Matrix Bsub = GetSubMatrix(B, m, blockCol, N);
 
         __shared__ float As[BLOCK_SIZE][BLOCK_SIZE];
         __shared__ float Bs[BLOCK_SIZE][BLOCK_SIZE];
@@ -214,7 +214,7 @@ __global__ void shared_kernel(int N, Matrix A, Matrix B, Matrix C)
         __syncthreads();
     }
 
-    SetElement(Csub, row, col, Cvalue);
+    SetElement(Csub, row, col, cValue);
 }
 
 /*
