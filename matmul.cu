@@ -108,17 +108,17 @@ int main(int argc, char *argv[]) {
      */
     cudaSetDevice(0); 
     //call and time for matmul_cuda_v1_vanilla(int N, REAL *A, REAL *B, REAL *C);
-    // elapsed_cuda_v1 = read_timer();
-    // matmul_cuda_v1_vanilla(N, A, B, C_base);
-    // elapsed_cuda_v1 = (read_timer() - elapsed_cuda_v1);
+    elapsed_cuda_v1 = read_timer();
+    matmul_cuda_v1_vanilla(N, A, B, C_base);
+    elapsed_cuda_v1 = (read_timer() - elapsed_cuda_v1);
     //call and time for matmul_cuda_v1_shmem(int N, REAL *A, REAL *B, REAL *C);
     // elapsed_cuda_v2 = read_timer();
     // matmul_cuda_v2_shmem(N, A, B, C_base);
     // elapsed_cuda_v2 = (read_timer() - elapsed_cuda_v2);
     //call and time for matmul_cuda_v1_cublas(int N, REAL *A, REAL *B, REAL *C);
-    elapsed_cuda_v3 = read_timer();
-    matmul_cuda_v3_cublas(N, A, B, C_base);
-    elapsed_cuda_v3 = (read_timer() - elapsed_cuda_v3);
+    // elapsed_cuda_v3 = read_timer();
+    // matmul_cuda_v3_cublas(N, A, B, C_base);
+    // elapsed_cuda_v3 = (read_timer() - elapsed_cuda_v3);
     printf("======================================================================================================\n");
     printf("Matrix Multiplication: A[M][K] * B[k][N] = C[M][N], M=K=N=%d, %d threads/tasks\n", N, num_tasks);
     printf("------------------------------------------------------------------------------------------------------\n");
@@ -126,9 +126,9 @@ int main(int argc, char *argv[]) {
     printf("------------------------------------------------------------------------------------------------------\n");
     printf("matmul_base:\t\t%4f\t%4f \t\t%g\n", elapsed_base * 1.0e3, ((((2.0 * N) * N) * N) / (1.0e6 * elapsed_base)), maxerror(N, N, C_base, C_base));
     printf("matmul_openmp:\t\t%4f\t%4f \t\t%g\n", elapsed_openmp * 1.0e3, ((((2.0 * N) * N) * N) / (1.0e6 * elapsed_openmp)), maxerror(N, N, C_base, C_openmp));
-    //printf("matmul_cuda_v1:\t\t%4f\t%4f \t\t%g\n", elapsed_cuda_v1 * 1.0e3, ((((2.0 * N) * N) * N) / (1.0e6 * elapsed_cuda_v1)), maxerror(N, N, C_base, C_openmp));
-    // printf("matmul_cuda_v2:\t\t%4f\t%4f \t\t%g\n", elapsed_cuda_v2 * 1.0e3, ((((2.0 * N) * N) * N) / (1.0e6 * elapsed_cuda_v2)), maxerror(N, N, C_base, C_openmp));
-    printf("matmul_cuda_v3:\t\t%4f\t%4f \t\t%g\n", elapsed_cuda_v3 * 1.0e3, ((((2.0 * N) * N) * N) / (1.0e6 * elapsed_cuda_v3)), maxerror(N, N, C_base, C_openmp));
+    printf("matmul_cuda_v1:\t\t%4f\t%4f \t\t%g\n", elapsed_cuda_v1 * 1.0e3, ((((2.0 * N) * N) * N) / (1.0e6 * elapsed_cuda_v1)), maxerror(N, N, C_base, C_openmp));
+    //printf("matmul_cuda_v2:\t\t%4f\t%4f \t\t%g\n", elapsed_cuda_v2 * 1.0e3, ((((2.0 * N) * N) * N) / (1.0e6 * elapsed_cuda_v2)), maxerror(N, N, C_base, C_openmp));
+    //printf("matmul_cuda_v3:\t\t%4f\t%4f \t\t%g\n", elapsed_cuda_v3 * 1.0e3, ((((2.0 * N) * N) * N) / (1.0e6 * elapsed_cuda_v3)), maxerror(N, N, C_base, C_openmp));
     /* put other printf statements for outputing results for GPU execution */
     free(heap_buffer);
     return 0;
