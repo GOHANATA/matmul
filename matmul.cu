@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
     elapsed_cuda_v1 = (read_timer() - elapsed_cuda_v1);
     //call and time for matmul_cuda_v1_shmem(int N, REAL *A, REAL *B, REAL *C);
     elapsed_cuda_v2 = read_timer();
-    matmul_cuda_v2_shmem(N, A, B, C_openmp);
+    matmul_cuda_v2_shmem(N, A, B, C_base);
     elapsed_cuda_v2 = (read_timer() - elapsed_cuda_v2);
     //call and time for matmul_cuda_v1_cublas(int N, REAL *A, REAL *B, REAL *C);
 
@@ -213,6 +213,7 @@ __global__ void shared_kernel(int N, Matrix A, Matrix B, Matrix C)
         Bs[row][col] = GetElement(Bsub, row, col);
         
         __syncthreads();
+        printf("matmul_cuda_v1:\t\t%4f\t%4f \t\t%g\n", elapsed_cuda_v1 * 1.0e3, ((((2.0 * N) * N) * N) / (1.0e6 * elapsed_cuda_v1)), maxerror(N, N, C_base, C_openmp));
 
         for (int e = 0; e < BLOCK_SIZE; ++e) cValue += As[row][e] * Bs[e][col];
         __syncthreads();
