@@ -66,8 +66,8 @@ double maxerror(int M, int N, REAL * A, REAL *B) {
 void matmul_base(int N, REAL *A, REAL * B, REAL *C);
 void matmul_openmp(int N, REAL *A, REAL *B, REAL *C, int num_tasks);
 void matmul_cuda_v1_vanilla(int N, REAL *A, REAL *B, REAL *C);
-void matmul_cuda_v1_shmem(int N, REAL *A, REAL *B, REAL *C);
-void matmul_cuda_v1_cublas(int N, REAL *A, REAL *B, REAL *C);
+void matmul_cuda_v2_shmem(int N, REAL *A, REAL *B, REAL *C);
+void matmul_cuda_v3_cublas(int N, REAL *A, REAL *B, REAL *C);
 
 int main(int argc, char *argv[]) {
     int N;
